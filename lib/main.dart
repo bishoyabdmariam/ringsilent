@@ -26,9 +26,18 @@ class Example extends StatefulWidget {
 }
 
 class _ExampleState extends State<Example> {
+  List<String> numbersTrue = [/*"01202089993" ,"01223378428" , "01227236361"*/];
+  List<String> numbersFalse = ["01202089993" ,"01223378428" , "01227236361"];
   PhoneState status = PhoneState.nothing();
   bool granted = false;
 
+
+  Future<bool> checkPermission() async {
+    var status = await Permission.phone.status;
+    return status.isGranted;
+  }
+
+/*
   Future<bool> requestPermission() async {
     var status = await Permission.phone.request();
 
@@ -42,6 +51,16 @@ class _ExampleState extends State<Example> {
       PermissionStatus.provisional || PermissionStatus.granted => true,
     };
 
+  }*/
+
+  Future<void> requestPermission() async {
+    var status = await Permission.phone.request();
+
+
+    if (status.isGranted) {
+      // Permission is granted, perform necessary actions
+      setStream();
+    }
   }
 
 
@@ -67,7 +86,36 @@ class _ExampleState extends State<Example> {
         _currentVolume = volume;
       });
     });
+/*
     openNotificationPolicySettings();
+*/
+
+    checkPermission().then((isGranted) {
+      setState(() {
+        granted = isGranted;
+        if (!granted) {
+          // If permission is not granted, prompt the user
+          checkDND();
+          requestPermission();
+        } else {
+          // Permission is already granted, perform necessary actions
+          setStream();
+        }
+      });
+    });
+  }
+
+  void checkDND()async{
+    if ( await FlutterDnd.isNotificationPolicyAccessGranted!= null) {
+      FlutterDnd.gotoPolicySettings();
+    }
+  }
+
+  void returnAsIt(bool t){
+    FlutterVolumeController.setMute(
+      t,
+      stream: AudioStream.ring,
+    );
   }
 
   @override
@@ -76,26 +124,31 @@ class _ExampleState extends State<Example> {
     super.dispose();
   }
 
-  void changeDisturb()async{
-
-  }
-
   void setStream() {
     PhoneState.stream.listen((event) {
+      print(event.status.name);
       setState(() {
-
-        FlutterVolumeController.setMute(
+        status = event;
+        if (numbersTrue.contains(status.number)){
+          FlutterVolumeController.setMute(
           false,
           stream: AudioStream.ring,
         );
-        status = event;
-        print(status.number);
-        print("this is status num");
-        if (status.number == "01202089993") {
-          print(_audioStream.toString());
-          handleMuteButtonPress();
+          if(event.status.name =="CALL_ENDED"){
+            returnAsIt(true);
+          }
+        }
+        else if (numbersFalse.contains(status.number)){
+          FlutterVolumeController.setMute(
+          true,
+          stream: AudioStream.ring,
+        );
+          if(event.status.name =="CALL_ENDED"){
+            returnAsIt(false);
+          }
         }
       });
+
     });
   }
 
@@ -103,6 +156,7 @@ class _ExampleState extends State<Example> {
 
 
 
+/*
 
   void openNotificationPolicySettings() async {
     String url = 'package:com.android.settings/notification.NotificationAccessSettings';
@@ -113,6 +167,7 @@ class _ExampleState extends State<Example> {
       // Handle if the settings page cannot be opened
     }
   }
+*/
 
 
 
@@ -137,7 +192,7 @@ class _ExampleState extends State<Example> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (Platform.isAndroid)
-              MaterialButton(
+              /*MaterialButton(
                 onPressed: !granted
                     ? () async {
                   bool temp = await requestPermission();
@@ -150,6 +205,14 @@ class _ExampleState extends State<Example> {
                 }
                     : null,
                 child: const Text("Request permission of Phone"),
+              ),*/
+              MaterialButton(
+                onPressed: !granted
+                    ? () async {
+                  requestPermission();
+                }
+                    : null,
+                child: const Text("Request Phone Permission"),
               ),
             const Text(
               "Status of call",
