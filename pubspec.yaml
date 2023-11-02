@@ -42,6 +42,7 @@ dependencies:
   flutter_volume_controller: ^1.2.7
   system_info2: ^4.0.0
   url_launcher: ^6.1.14
+  flutter_dnd: ^0.1.4+1
 
 
 dev_dependencies:

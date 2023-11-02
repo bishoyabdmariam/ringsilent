@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_dnd/flutter_dnd.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:phone_state/phone_state.dart';
@@ -31,12 +32,16 @@ class _ExampleState extends State<Example> {
   Future<bool> requestPermission() async {
     var status = await Permission.phone.request();
 
+    if ( await FlutterDnd.isNotificationPolicyAccessGranted!= null) {
+      FlutterDnd.gotoPolicySettings();
+    }
 
     print(PermissionStatus);
     return switch (status) {
       PermissionStatus.denied || PermissionStatus.restricted || PermissionStatus.limited || PermissionStatus.permanentlyDenied => false,
       PermissionStatus.provisional || PermissionStatus.granted => true,
     };
+
   }
 
 
@@ -70,6 +75,11 @@ class _ExampleState extends State<Example> {
     FlutterVolumeController.removeListener();
     super.dispose();
   }
+
+  void changeDisturb()async{
+
+  }
+
   void setStream() {
     PhoneState.stream.listen((event) {
       setState(() {
@@ -81,13 +91,15 @@ class _ExampleState extends State<Example> {
         status = event;
         print(status.number);
         print("this is status num");
-        if (status.number == "01227236361") {
+        if (status.number == "01202089993") {
           print(_audioStream.toString());
           handleMuteButtonPress();
         }
       });
     });
   }
+
+
 
 
 
