@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:phone_state/phone_state.dart';
+import 'package:silent/ex.dart';
 import 'package:system_info2/system_info2.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 main() {
   runApp(
@@ -28,6 +31,8 @@ class _ExampleState extends State<Example> {
   Future<bool> requestPermission() async {
     var status = await Permission.phone.request();
 
+
+    print(PermissionStatus);
     return switch (status) {
       PermissionStatus.denied || PermissionStatus.restricted || PermissionStatus.limited || PermissionStatus.permanentlyDenied => false,
       PermissionStatus.provisional || PermissionStatus.granted => true,
@@ -35,7 +40,7 @@ class _ExampleState extends State<Example> {
   }
 
 
-  AudioStream _audioStream = AudioStream.system;
+  AudioStream _audioStream = AudioStream.ring;
   AudioSessionCategory _audioSessionCategory = AudioSessionCategory.ambient;
   double _currentVolume = 0.0;
 
@@ -57,6 +62,7 @@ class _ExampleState extends State<Example> {
         _currentVolume = volume;
       });
     });
+    openNotificationPolicySettings();
   }
 
   @override
@@ -67,22 +73,36 @@ class _ExampleState extends State<Example> {
   void setStream() {
     PhoneState.stream.listen((event) {
       setState(() {
-        if (event != null) {
-          status = event;
-          print(status.number);
-          print("************************************************************");
-          if (status.number == "01227236361") {
-            print(_audioStream.toString());
-            handleMuteButtonPress();
-          }
+
+        FlutterVolumeController.setMute(
+          false,
+          stream: AudioStream.ring,
+        );
+        status = event;
+        print(status.number);
+        print("this is status num");
+        if (status.number == "01227236361") {
+          print(_audioStream.toString());
+          handleMuteButtonPress();
         }
       });
     });
   }
 
-  Future<void> openNotificationPolicySettings() async {
-    await SystemInfo2.instance.openNotificationPolicySettings();
+
+
+
+  void openNotificationPolicySettings() async {
+    String url = 'package:com.android.settings/notification.NotificationAccessSettings';
+    Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      // Handle if the settings page cannot be opened
+    }
   }
+
+
 
   Future<void> handleMuteButtonPress() async {
     try {
@@ -132,7 +152,10 @@ class _ExampleState extends State<Example> {
               getIcons(),
               color: getColor(),
               size: 80,
-            )
+            ),
+            ElevatedButton(onPressed: (){
+              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => Home() ));
+            }, child: Text('not'),),
           ],
         ),
       ),
@@ -142,7 +165,6 @@ class _ExampleState extends State<Example> {
   IconData getIcons() {
 
     print(status.number);
-    print("******************************************");
     return switch (status.status) {
       PhoneStateStatus.NOTHING => Icons.clear,
       PhoneStateStatus.CALL_INCOMING => Icons.add_call,
